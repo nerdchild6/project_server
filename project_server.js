@@ -12,6 +12,60 @@ app.get("/welcome", function(req, res) {
     res.send("Welcome to you!");
 });
 
+//--------------- hash password ------------
+app.get('/password/:raw', function (req, res) {
+    const raw = req.params.raw;
+    bcrypt.hash(raw, 10, function (err, hash) {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Server error');
+        }
+        else {
+            console.log(hash.length);
+            res.status(200).send(hash);
+        }
+    });
+});
+//---------------- input login -------------
+app.post('/login', function (req, res) {
+    const username = req.body.username;
+    const raw_password = req.body.password;
+
+    const sql = "SELECT username, password, role, user_name, email FROM user WHERE username=?";
+    con.query(sql, [username], function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        if (results.length === 0) {
+            return res.status(401).send('Login failed: username is wrong');
+        }
+
+        const hash = results[0].password;
+        bcrypt.compare(raw_password, hash, function (err, same) {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Server error');
+            }
+            if (same) {
+                const role = results[0].role;
+                res.send(results[0]);
+                if (role === 'student') {
+                    console.log('student');
+
+                } else if (role === 'admin') {
+                    console.log('admin');
+                } else {
+                    console.log('approver');
+                }
+
+            } else {
+                return res.status(401).send('Login failed: wrong password');
+            }
+        });
+    });
+});
+
 //--------------- input register -----------
 app.post('/register', function (req, res) {
     const { name, username, email, password, confirmPassword } = req.body;
@@ -33,7 +87,6 @@ app.post('/register', function (req, res) {
                 return res.status(500).send('Server error2');
             }
             console.log("User registered successfully");
-            res.redirect(301, '/');
         });
     });
 });
