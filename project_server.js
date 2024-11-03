@@ -8,6 +8,7 @@ const { request } = require('http');
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
+//--------------- test backend ------------
 app.get("/welcome", function(req, res) {
     res.send("Welcome to you!");
 });
@@ -129,7 +130,18 @@ app.get('/asset', function (req, res) {
     });
 });
 
-
+//---------------- get detail asset info ----------------
+app.get('/asset/asset_id/:asset_id', function (req, res) {
+    const asset_id = req.params.asset_id;
+    const sql = "SELECT * FROM asset WHERE asset_id =?";
+    con.query(sql, [asset_id], function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        res.json(results);
+    });
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, function(){
