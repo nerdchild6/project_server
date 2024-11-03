@@ -275,6 +275,22 @@ app.put('/asset/:asset_id/edit', function (req, res) {
     });
 });
 
+// ------------- enable/disable asset --------------
+app.put('/asset/:asset_id/disable', function (req, res) {
+    const asset_status = req.body.asset_status;
+    const sql = "UPDATE asset SET asset_status=? WHERE asset_id=?";
+    con.query(sql, [asset_status, req.params.asset_id], function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Database server error");
+        }
+        if (results.affectedRows != 1) {
+            return res.status(500).send("Update error");
+        }
+        res.send('Asset disable/enable status updated!');
+    });
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
     console.log("Server is ready at " + port);
