@@ -200,7 +200,45 @@ app.get('/request/:user_id', (req, res) => {
     });
 });
 
+//--------------- user history -----------
+app.get('/history/:user_id', (req, res) => {
+    const user_id = req.params.user_id;
 
+    const sql = `
+        SELECT 
+            asset.asset_name, 
+            asset.file_path, 
+            u1.username AS approver_name, 
+            u1.user_id AS approver_id,
+            u2.username AS admin_name,
+            u2.user_id AS admin_id,
+            request.borrow_date,
+            request.return_date,
+            history.history_id
+        FROM 
+            history 
+            JOIN asset ON history.asset_id = asset.asset_id 
+            LEFT JOIN user AS u1 ON history.approved_by = u1.user_id
+            LEFT JOIN user AS u2 ON history.returned_by = u2.user_id
+            JOIN request ON history.request_id = request.request_id
+        WHERE 
+            history.borrower_id = ?
+        ORDER BY 
+            history.history_id DESC;
+    `;
+    con.query(sql, user_id, (error, results) => {
+        if (error) {
+            console.error('Database error while fetching booking history:', error);
+            return res.status(500).json({ error: 'Database error', details: error.message });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'No booking history found' });
+        }
+        console.log("Booking History Data:", results);
+        res.json(results);
+    });
+
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
