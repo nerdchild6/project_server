@@ -91,6 +91,30 @@ app.post('/register', function (req, res) {
     });
 });
 
+//---------------- get assets info ----------------
+app.get('/asset', function (req, res) {
+    const sql = "SELECT * FROM asset";
+    con.query(sql, function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        res.json(results);
+    });
+});
+//---------------- get assets info with catagorie----------------
+app.get('/asset/:categorie', function (req, res) {
+    const categorie = req.params.categorie;
+    const sql = "SELECT * FROM asset WHERE categorie =?";
+    con.query(sql, [categorie], function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        res.json(results);
+    });
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, function(){
     console.log("Server is ready at " + port);
