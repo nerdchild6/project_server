@@ -244,7 +244,7 @@ app.get('/history/:user_id', (req, res) => {
 
 //======================================== ADMIN =============================================
 
-// -----------------add-------------------
+// ----------------- add asset -------------------
 app.post('/asset', function (req, res) {
     const { asset_name, file_path, categorie } = req.body;
 
@@ -256,6 +256,22 @@ app.post('/asset', function (req, res) {
         }
         console.log("Add data successfully");
         res.status(200).send({ message: 'Data added successfully' }); // Send a success response
+    });
+});
+
+// ----------------- edit asset data -------------------
+app.put('/asset/:asset_id/edit', function (req, res) {
+    const asset_id = req.params.asset_id;
+    const { asset_name, file_path, categorie } = req.body;
+
+    const sql = "UPDATE asset SET asset_name = ?, file_path = ?, categorie = ? WHERE asset_id = ?";
+    con.query(sql, [asset_name, file_path, categorie, asset_id], function (err, result) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        res.status(200).json({ message: "Edit data successfully" });
+        // res.redirect(301, '/roomSta');
     });
 });
 
