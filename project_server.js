@@ -291,6 +291,21 @@ app.put('/asset/:asset_id/disable', function (req, res) {
     });
 });
 
+// ----------------dashboard---------------
+app.get('/dashboard', function (req, res) {
+    const sql = "SELECT asset_status, COUNT(*) AS count FROM asset GROUP BY asset_status UNION SELECT 'Total', COUNT(*) FROM asset";
+    con.query(sql, function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        console.log(results)
+        res.json(results);
+    });
+});
+
+
+
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
     console.log("Server is ready at " + port);
