@@ -6,10 +6,10 @@ const bcrypt = require('bcrypt');
 const { request } = require('http');
 
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
 //--------------- test backend ------------
-app.get("/welcome", function(req, res) {
+app.get("/welcome", function (req, res) {
     res.send("Welcome to you!");
 });
 
@@ -145,7 +145,7 @@ app.get('/asset/asset_id/:asset_id', function (req, res) {
 
 //--------------- insert student request to database -----------
 app.post('/borrow', (req, res) => {
-    const { asset_id, user_id } = req.body; 
+    const { asset_id, user_id } = req.body;
 
     const getUserIdSql = "SELECT user_id FROM user WHERE user_id = ?";
     con.query(getUserIdSql, [user_id], (err, results) => {
@@ -160,22 +160,34 @@ app.post('/borrow', (req, res) => {
         //get user_id
         const userId = results[0].user_id;
 
-        const sql = "INSERT INTO request (asset_id, borrower_id, borrow_date, return_date, approve_status) VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 7 DAY), 'pending')";
-        con.query(sql, [asset_id, userId], (err, result) => {
+        const same_today = "SELECT * FROM request WHERE borrower_id = ? AND borrow_date = CURRENT_DATE AND (approve_status = 'pending' OR approve_status = 'approved')";
+        con.query(same_today, [userId], (err, results) => {
             if (err) {
-                console.error('Error inserting request:', err);
-                return res.status(500).send('Error inserting request');
+                console.error('Error querying database:', err);
+                res.status(500).json({ error: 'Error querying database' });
+                return;
             }
-            console.log('Inserted new request');
-            res.status(200).json({
-                message: 'Inserted new request',
-            });
+            if (results.length > 0) {
+                return res.status(200).send('can borrow only one movie per day');
+            } else {
+                const insert_request = "INSERT INTO request (asset_id, borrower_id, borrow_date, return_date, approve_status) VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 7 DAY), 'pending')";
+                con.query(insert_request, [asset_id, userId], (err, result) => {
+                    if (err) {
+                        console.error('Error inserting request:', err);
+                        return res.status(500).send('Error inserting request');
+                    }
+                    console.log('Inserted new request');
+                    res.status(200).json({
+                        message: 'Inserted new request',
+                    });
+                });
+            }
         });
     });
 });
 
 
 const port = process.env.PORT || 3000;
-app.listen(port, function(){
+app.listen(port, function () {
     console.log("Server is ready at " + port);
 });
