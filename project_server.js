@@ -13,6 +13,8 @@ app.get("/welcome", function (req, res) {
     res.send("Welcome to you!");
 });
 
+//======================================== STUDENT =============================================
+
 //--------------- hash password ------------
 app.get('/password/:raw', function (req, res) {
     const raw = req.params.raw;
@@ -238,6 +240,23 @@ app.get('/history/:user_id', (req, res) => {
         res.json(results);
     });
 
+});
+
+//======================================== ADMIN =============================================
+
+// -----------------add-------------------
+app.post('/asset', function (req, res) {
+    const { asset_name, file_path, categorie } = req.body;
+
+    const sql = "INSERT INTO  asset( asset_name, asset_status, file_path, categorie) VALUES (?, 'available', ?, ?)";
+    con.query(sql, [asset_name, file_path, categorie], function (err, result) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error2');
+        }
+        console.log("Add data successfully");
+        res.status(200).send({ message: 'Data added successfully' }); // Send a success response
+    });
 });
 
 const port = process.env.PORT || 3000;
