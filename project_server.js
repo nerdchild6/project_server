@@ -186,6 +186,21 @@ app.post('/borrow', (req, res) => {
     });
 });
 
+//--------------- get recent borrow request from database of that user-----------
+app.get('/request/:user_id', (req, res) => {
+    const user_id = req.params.user_id;
+    const sql = `SELECT request.*, user.user_name FROM request JOIN user ON request.borrower_id = user.user_id WHERE borrower_id = ? ORDER BY request.request_id DESC LIMIT 1`;
+    con.query(sql, user_id, (err, results) => {
+        if (err) {
+            console.error('Error querying database:', err);
+            res.status(500).json({ error: 'Error querying database' });
+            return;
+        }
+        res.json(results);
+    });
+});
+
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
