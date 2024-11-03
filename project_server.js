@@ -91,8 +91,8 @@ app.post('/register', function (req, res) {
     });
 });
 
-//---------------- get assets info ----------------
-app.get('/asset', function (req, res) {
+// ---------------- get assets info ----------------
+app.get('/all_asset', function (req, res) {
     const sql = "SELECT * FROM asset";
     con.query(sql, function (err, results) {
         if (err) {
@@ -102,6 +102,7 @@ app.get('/asset', function (req, res) {
         res.json(results);
     });
 });
+
 //---------------- get assets info with catagorie----------------
 app.get('/asset/:categorie', function (req, res) {
     const categorie = req.params.categorie;
@@ -114,6 +115,21 @@ app.get('/asset/:categorie', function (req, res) {
         res.json(results);
     });
 });
+
+//---------------- get assets info with search asset name ----------------
+app.get('/asset', function (req, res) {
+    const asset_name = req.query.asset_name;
+    const sql = "SELECT * FROM asset WHERE LOWER(asset_name) LIKE LOWER(?)";
+    con.query(sql, [`%${asset_name}%`], function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        res.json(results);
+    });
+});
+
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, function(){
