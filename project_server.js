@@ -143,6 +143,38 @@ app.get('/asset/asset_id/:asset_id', function (req, res) {
     });
 });
 
+//--------------- insert student request to database -----------
+app.post('/borrow', (req, res) => {
+    const { asset_id, user_id } = req.body; 
+
+    const getUserIdSql = "SELECT user_id FROM user WHERE user_id = ?";
+    con.query(getUserIdSql, [user_id], (err, results) => {
+        if (err) {
+            console.error('Error querying user:', err);
+            return res.status(500).send('Error querying user');
+        }
+
+        if (results.length === 0) {
+            return res.status(404).send('User not found');
+        }
+        //get user_id
+        const userId = results[0].user_id;
+
+        const sql = "INSERT INTO request (asset_id, borrower_id, borrow_date, return_date, approve_status) VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 7 DAY), 'pending')";
+        con.query(sql, [asset_id, userId], (err, result) => {
+            if (err) {
+                console.error('Error inserting request:', err);
+                return res.status(500).send('Error inserting request');
+            }
+            console.log('Inserted new request');
+            res.status(200).json({
+                message: 'Inserted new request',
+            });
+        });
+    });
+});
+
+
 const port = process.env.PORT || 3000;
 app.listen(port, function(){
     console.log("Server is ready at " + port);
