@@ -488,6 +488,69 @@ app.put('/request/:request_id/approve', function (req, res) {
     });
 });
 
+//---------------- approver click reject request ------------------------
+app.put('/request/:request_id/reject', function (req, res) {
+    const approved_by = req.body.approved_by;
+    const request_id = req.params.request_id;
+
+    const sql1 = "SELECT asset.asset_id FROM request JOIN asset ON request.asset_id = asset.asset_id WHERE request.request_id=?";
+    con.query(sql1, request_id, function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Database server error");
+        }
+
+        if (results.length === 0) {  // Only check `results.length` for SELECT queries
+            return res.status(404).send("asset_id not found");
+        }
+
+        // Assign the asset_id from the results
+        const assetId = results[0].asset_id;
+        console.log("Fetched assetId:", assetId);
+
+        const sql2 = "UPDATE request SET approved_by=?, approve_status='rejected' WHERE request_id=?";
+        con.query(sql2, [approved_by, request_id], function (err, results) {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Database server error");
+            }
+
+            console.log("Update request affected rows:", results.affectedRows);
+            if (results.affectedRows != 1) {
+                return res.status(500).send("Update error1");
+            }
+
+            const sql3 = "UPDATE asset SET asset_status='available' WHERE asset_id=?";
+            con.query(sql3, assetId, function (err, results) {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send("Database server error");
+                }
+
+                console.log("Update asset affected rows:", results.affectedRows);
+                if (results.affectedRows != 1) {
+                    return res.status(500).send("Update error1");
+                }
+
+                const sql4 = "UPDATE history SET approved_by=? WHERE request_id=?";
+                con.query(sql4, [approved_by, request_id], (err, results) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send("Database server error");
+                    }
+
+                    console.log("Update history affected rows:", results.affectedRows);
+                    if (results.affectedRows != 1) {
+                        return res.status(500).send("Update error4");
+                    }
+
+                    res.send('Reject Asset!!');
+                });
+            });
+        });
+    });
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
     console.log("Server is ready at " + port);
