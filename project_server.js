@@ -13,8 +13,6 @@ app.get("/welcome", function (req, res) {
     res.send("Welcome to you!");
 });
 
-//======================================== STUDENT =============================================
-
 //--------------- hash password ------------
 app.get('/password/:raw', function (req, res) {
     const raw = req.params.raw;
@@ -29,6 +27,9 @@ app.get('/password/:raw', function (req, res) {
         }
     });
 });
+
+//======================================== STUDENT =============================================
+
 //---------------- input login -------------
 app.post('/login', function (req, res) {
     const username = req.body.username;
@@ -89,6 +90,7 @@ app.post('/register', function (req, res) {
                 console.error(err);
                 return res.status(500).send('Server error2');
             }
+            res.status(200).send('User registered successfully');
             console.log("User registered successfully");
         });
     });
@@ -182,7 +184,7 @@ app.post('/borrow', (req, res) => {
                     con.query(Change_status_asset, [asset_id], (err, result) => {
                         if (err) {
                             console.error('Error inserting request:', err);
-                            return res.status(500).send('Error inserting request');
+                            return res.status(500).send('Error Changing status request');
                         }
                         const search_request_id = "SELECT request_id FROM request WHERE borrower_id = ? AND asset_id = ? ORDER BY request_id DESC LIMIT 1";
                         con.query(search_request_id, [borrower_id, asset_id], function (err, results) {
@@ -200,7 +202,7 @@ app.post('/borrow', (req, res) => {
                             con.query(insert_history, [asset_id, borrower_id, request_id], (err, result) => {
                                 if (err) {
                                     console.error('Error inserting request:', err);
-                                    return res.status(500).send('Error inserting request');
+                                    return res.status(500).send('Error inserting history request');
                                 }
                                 console.log('Inserted new request');
                                 res.status(200).json({
@@ -221,7 +223,7 @@ app.post('/borrow', (req, res) => {
 //--------------- get recent borrow request from database of that user-----------
 app.get('/request/:user_id', (req, res) => {
     const user_id = req.params.user_id;
-    const sql = `SELECT request.*, user.user_name FROM request JOIN user ON request.borrower_id = user.user_id WHERE borrower_id = ? ORDER BY request.request_id DESC LIMIT 1`;
+    const sql = `SELECT request.*, user.user_name, asset.asset_name FROM request JOIN user ON request.borrower_id = user.user_id JOIN asset ON request.asset_id = asset.asset_id WHERE borrower_id = ? ORDER BY request.request_id DESC LIMIT 1`;
     con.query(sql, user_id, (err, results) => {
         if (err) {
             console.error('Error querying database:', err);
