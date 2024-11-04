@@ -160,10 +160,10 @@ app.post('/borrow', (req, res) => {
             return res.status(404).send('User not found');
         }
         //get user_id
-        const userId = results[0].user_id;
+        const borrower_id = results[0].user_id;
 
         const same_today = "SELECT * FROM request WHERE borrower_id = ? AND borrow_date = CURRENT_DATE AND (approve_status = 'pending' OR approve_status = 'approved')";
-        con.query(same_today, [userId], (err, results) => {
+        con.query(same_today, [borrower_id], (err, results) => {
             if (err) {
                 console.error('Error querying database:', err);
                 res.status(500).json({ error: 'Error querying database' });
@@ -173,7 +173,7 @@ app.post('/borrow', (req, res) => {
                 return res.status(200).send('can borrow only one movie per day');
             } else {
                 const insert_request = "INSERT INTO request (asset_id, borrower_id, borrow_date, return_date, approve_status) VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 7 DAY), 'pending')";
-                con.query(insert_request, [asset_id, userId], (err, result) => {
+                con.query(insert_request, [asset_id, borrower_id], (err, result) => {
                     if (err) {
                         console.error('Error inserting request:', err);
                         return res.status(500).send('Error inserting request');
@@ -184,9 +184,31 @@ app.post('/borrow', (req, res) => {
                             console.error('Error inserting request:', err);
                             return res.status(500).send('Error inserting request');
                         }
-                        console.log('Inserted new request');
-                        res.status(200).json({
-                            message: 'Inserted new request',
+                        const search_request_id = "SELECT request_id FROM request WHERE borrower_id = ? AND asset_id = ? ORDER BY request_id DESC LIMIT 1";
+                        con.query(search_request_id, [borrower_id, asset_id], function (err, results) {
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).send('Server error');
+                            }
+                            if (results.length === 0) {
+                                return res.status(404).send('Request_id not found');
+                            }
+                            //get request_id
+                            const request_id = results[0].request_id;
+
+                            const insert_history = "INSERT INTO history (asset_id, borrower_id, request_id) VALUES (?, ?, ?)";
+                            con.query(insert_history, [asset_id, borrower_id, request_id], (err, result) => {
+                                if (err) {
+                                    console.error('Error inserting request:', err);
+                                    return res.status(500).send('Error inserting request');
+                                }
+                                console.log('Inserted new request');
+                                res.status(200).json({
+                                    message: 'Inserted new request',
+                                });
+
+                            });
+
                         });
 
                     });
@@ -336,7 +358,7 @@ app.put('/asset/:request_id/return', function (req, res) {
             console.error(err);
             return res.status(500).send("Database server error");
         }
-        
+
         if (results.length === 0) {  // Only check `results.length` for SELECT queries
             return res.status(404).send("asset_id not found");
         }
