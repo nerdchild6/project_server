@@ -413,6 +413,17 @@ app.put('/asset/:request_id/return', function (req, res) {
     });
 });
 
+//---------------- get list of borrow asset request ----------------
+app.get('/request', function (req, res) {
+    const sql = "SELECT request.*, asset.asset_name FROM request JOIN asset ON request.asset_id = asset.asset_id";
+    con.query(sql, function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Server error');
+        }
+        res.json(results);
+    });
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
