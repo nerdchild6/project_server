@@ -244,6 +244,8 @@ app.get('/history/:user_id', (req, res) => {
             u1.user_id AS approver_id,
             u2.username AS admin_name,
             u2.user_id AS admin_id,
+            u3.username AS borrower_name,
+            u3.user_id AS borrower_id,
             request.borrow_date,
             request.return_date,
             request.approve_status,
@@ -253,6 +255,7 @@ app.get('/history/:user_id', (req, res) => {
             JOIN asset ON history.asset_id = asset.asset_id 
             LEFT JOIN user AS u1 ON history.approved_by = u1.user_id
             LEFT JOIN user AS u2 ON history.returned_by = u2.user_id
+            LEFT JOIN user AS u3 ON history.borrower_id = u3.user_id
             JOIN request ON history.request_id = request.request_id
         WHERE 
             history.borrower_id = ?
