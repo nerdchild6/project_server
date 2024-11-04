@@ -178,9 +178,17 @@ app.post('/borrow', (req, res) => {
                         console.error('Error inserting request:', err);
                         return res.status(500).send('Error inserting request');
                     }
-                    console.log('Inserted new request');
-                    res.status(200).json({
-                        message: 'Inserted new request',
+                    const Change_status_asset = "UPDATE asset SET asset_status = 'pending' WHERE asset_id = ?";
+                    con.query(Change_status_asset, [asset_id], (err, result) => {
+                        if (err) {
+                            console.error('Error inserting request:', err);
+                            return res.status(500).send('Error inserting request');
+                        }
+                        console.log('Inserted new request');
+                        res.status(200).json({
+                            message: 'Inserted new request',
+                        });
+
                     });
                 });
             }
@@ -216,6 +224,7 @@ app.get('/history/:user_id', (req, res) => {
             u2.user_id AS admin_id,
             request.borrow_date,
             request.return_date,
+            request.approve_status,
             history.history_id
         FROM 
             history 
@@ -315,6 +324,70 @@ app.get('/return', function (req, res) {
         res.json(results);
     });
 });
+
+// ------------- admin click return asset --------------
+app.put('/asset/:request_id/return', function (req, res) {
+    const returned_by = req.body.returned_by;
+    const request_id = req.params.request_id;
+
+    const sql1 = "SELECT asset.asset_id FROM request JOIN asset ON request.asset_id = asset.asset_id WHERE request.request_id=?";
+    con.query(sql1, request_id, function (err, results) {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Database server error");
+        }
+        
+        if (results.length === 0) {  // Only check `results.length` for SELECT queries
+            return res.status(404).send("asset_id not found");
+        }
+
+        // Assign the asset_id from the results
+        const assetId = results[0].asset_id;
+        console.log("Fetched assetId:", assetId);
+
+        const sql2 = "UPDATE request SET return_status='returned' WHERE asset_id=?";
+        con.query(sql2, assetId, function (err, results) {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Database server error");
+            }
+
+            console.log("Update request affected rows:", results.affectedRows);
+            if (results.affectedRows != 1) {
+                return res.status(500).send("Update error1");
+            }
+
+            const sql3 = "UPDATE asset SET asset_status='available' WHERE asset_id=?";
+            con.query(sql3, assetId, function (err, results) {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send("Database server error");
+                }
+
+                console.log("Update asset affected rows:", results.affectedRows);
+                if (results.affectedRows != 1) {
+                    return res.status(500).send("Update error1");
+                }
+
+                const sql4 = "UPDATE history SET returned_by=? WHERE request_id=?";
+                con.query(sql4, [returned_by, request_id], (err, results) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send("Database server error");
+                    }
+
+                    console.log("Update history affected rows:", results.affectedRows);
+                    if (results.affectedRows != 1) {
+                        return res.status(500).send("Update error4");
+                    }
+
+                    res.send('Return Asset!!');
+                });
+            });
+        });
+    });
+});
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
