@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 const app = express();
 const con = require('./config/db');
@@ -7,6 +8,8 @@ const { request } = require('http');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const JWT_KEY = 'm0bile2Simple';
 
 //--------------- test backend ------------
 app.get("/welcome", function (req, res) {
@@ -53,15 +56,14 @@ app.post('/login', function (req, res) {
             }
             if (same) {
                 const role = results[0].role;
-                res.send(results[0]);
-                if (role === 'student') {
-                    console.log('student');
+                const user_name = results[0].user_name;
+                const email = results[0].email;
+                // res.send(results[0]);
 
-                } else if (role === 'admin') {
-                    console.log('admin');
-                } else {
-                    console.log('approver');
-                }
+                // console.log('student');
+                const payload = { "username": username, "role": role, "user_name": user_name, "email": email };
+                const token = jwt.sign(payload, JWT_KEY, { expiresIn: '1d' });
+                return res.send(token);
 
             } else {
                 return res.status(401).send('Login failed: wrong password');
