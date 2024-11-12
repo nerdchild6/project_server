@@ -31,6 +31,31 @@ app.get('/password/:raw', function (req, res) {
     });
 });
 
+//-------------------------- JWT decode -----------------------
+app.get('/username', function (req, res) {
+    // get token
+    let token = req.headers['authorization'] || req.headers['x-access-token'];
+    if (token == undefined || token == null) {
+        // no token
+        return res.status(400).send('No token');
+    }
+    // token found, extract token
+    if (req.headers.authorization) {
+        const tokenString = token.split(' ');
+        if (tokenString[0] == 'Bearer') {
+            token = tokenString[1];
+        }
+    }
+    // verify token
+    jwt.verify(token, JWT_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(400).send('Incorrect token');
+        }
+        res.send(decoded);
+    });
+});
+
+
 //======================================== STUDENT =============================================
 
 //---------------- input login -------------
@@ -38,7 +63,7 @@ app.post('/login', function (req, res) {
     const username = req.body.username;
     const raw_password = req.body.password;
 
-    const sql = "SELECT username, password, role, user_name, email FROM user WHERE username=?";
+    const sql = "SELECT user_id, username, password, role, user_name, email FROM user WHERE username=?";
     con.query(sql, [username], function (err, results) {
         if (err) {
             console.error(err);
@@ -58,10 +83,11 @@ app.post('/login', function (req, res) {
                 const role = results[0].role;
                 const user_name = results[0].user_name;
                 const email = results[0].email;
+                const user_id = results[0].user_id;
                 // res.send(results[0]);
 
                 // console.log('student');
-                const payload = { "username": username, "role": role, "user_name": user_name, "email": email };
+                const payload = {"user_id": user_id, "username": username, "role": role, "user_name": user_name, "email": email };
                 const token = jwt.sign(payload, JWT_KEY, { expiresIn: '1d' });
                 return res.send(token);
 
